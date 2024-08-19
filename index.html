@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>המשחק של אופיר</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-image: url('background.png');
+            background-size: cover;
+            background-position: center;
+        }
+        #game-container {
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #start-screen, #game-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #game-screen {
+            display: none;
+        }
+        h1, h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #name-input {
+            font-size: 24px;
+            padding: 10px;
+            margin: 20px 0;
+            width: 80%;
+            max-width: 300px;
+            text-align: center;
+            border: 2px solid #4CAF50;
+            border-radius: 5px;
+        }
+        .button {
+            font-size: 20px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .circle {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin: 5px;
+            font-size: 20px;
+            line-height: 60px;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        .circle:hover {
+            transform: scale(1.05);
+        }
+        #timer, #score {
+            font-size: 18px;
+            margin: 10px 0;
+            color: #333;
+        }
+        #instruction {
+            font-size: 22.5px;
+            margin: 15px 0;
+            font-weight: bold;
+            color: #333;
+        }
+        #stage-complete {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+        }
+        #countdown {
+            width: 100px;
+            height: 100px;
+            background-color: #FFF700;
+            border-radius: 50%;
+            font-size: 48px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            margin-top: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        #victory {
+            max-width: 200px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>ברוכים הבאים למשחק של אופיר!</h1>
+            <input type="text" id="name-input" placeholder="הכנס את שמך">
+            <button id="start-button" class="button">התחל משחק</button>
+        </div>
+        <div id="game-screen">
+            <div id="timer">זמן: 0 שניות</div>
+            <div id="score">נקודות: 0</div>
+            <div id="instruction"></div>
+            <div id="circles"></div>
+        </div>
+    </div>
+
+    <div id="stage-complete">
+        <h2 id="stage-complete-message"></h2>
+        <div id="countdown"></div>
+    </div>
+
+    <audio id="background-music" loop>
+        <source src="sound.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="success-sound">
+        <source src="yes.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="failure-sound">
+        <source src="no.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const startScreen = document.getElementById('start-screen');
+        const gameScreen = document.getElementById('game-screen');
+        const nameInput = document.getElementById('name-input');
+        const startButton = document.getElementById('start-button');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        const instructionDisplay = document.getElementById('instruction');
+        const circlesContainer = document.getElementById('circles');
+        const stageCompleteScreen = document.getElementById('stage-complete');
+        const stageCompleteMessage = document.getElementById('stage-complete-message');
+        const countdownDisplay = document.getElementById('countdown');
+        const backgroundMusic = document.getElementById('background-music');
+        const successSound = document.getElementById('success-sound');
+        const failureSound = document.getElementById('failure-sound');
+
+        let playerName = '';
+        let currentStage = 0;
+        let score = 0;
+        let timer = 0;
+        let timerInterval;
+        let selectedCircles = [];
+        const stageGoals = [10, 10, 20, 20, 30, 30];
+        const colors = ['#FFF700', '#00CED1', '#FF69B4', '#32CD32', '#FF1493'];
+
+        startButton.addEventListener('click', startGame);
+        nameInput.addEventListener('keyup', function(event) {
+            if (event.key === 'Enter') {
+                startGame();
+            }
+        });
+
+        function startGame() {
+            playerName = nameInput.value || 'תלמיד';
+            startScreen.style.display = 'none';
+            gameScreen.style.display = 'block';
+            backgroundMusic.play();
+            startStage();
+        }
+
+        function startStage() {
+            currentStage++;
+            if (currentStage > 6) {
+                endGame();
+                return;
+            }
+
+            instructionDisplay.textContent = `מצא את זוגות העיגולים שסכומם ${stageGoals[currentStage - 1]}`;
+            createCircles();
+            if (currentStage === 1) {
+                startTimer();
+            }
+        }
+
+        function createCircles() {
+            circlesContainer.innerHTML = '';
+            const numbers = [];
+            const pairs = [];
+            const goal = stageGoals[currentStage - 1];
+            const isRandomColorStage = currentStage % 2 === 0;
+
+            for (let i = 0; i < 5; i++) {
+                let num1, num2;
+                do {
+                    num1 = Math.floor(Math.random() * (goal - 1)) + 1;
+                    num2 = goal - num1;
+                } while (numbers.includes(num1) || numbers.includes(num2));
+
+                numbers.push(num1, num2);
+                pairs.push([num1, num2]);
+            }
+
+            shuffleArray(numbers);
+
+            numbers.forEach((num, index) => {
+                const circle = document.createElement('div');
+                circle.className = 'circle';
+                circle.textContent = num;
+                if (isRandomColorStage) {
+                    circle.style.backgroundColor = getRandomColor();
+                } else {
+                    const pairIndex = pairs.findIndex(pair => pair.includes(num));
+                    circle.style.backgroundColor = colors[pairIndex];
+                }
+                circle.addEventListener('click', () => selectCircle(circle));
+                circlesContainer.appendChild(circle);
+            });
+        }
+
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16);
+        }
+
+        function selectCircle(circle) {
+            if (selectedCircles.length < 2 && !selectedCircles.includes(circle)) {
+                selectedCircles.push(circle);
+                circle.style.opacity = '0.5';
+
+                if (selectedCircles.length === 2) {
+                    checkPair();
+                }
+            }
+        }
+
+        function checkPair() {
+            const sum = parseInt(selectedCircles[0].textContent) + parseInt(selectedCircles[1].textContent);
+            if (sum === stageGoals[currentStage - 1]) {
+                score++;
+                scoreDisplay.textContent = `נקודות: ${score}`;
+                selectedCircles.forEach(circle => circle.style.visibility = 'hidden');
+                successSound.play();
+            } else {
+                selectedCircles.forEach(circle => circle.style.opacity = '1');
+                failureSound.play();
+            }
+            selectedCircles = [];
+
+            if (Array.from(circlesContainer.children).every(circle => circle.style.visibility === 'hidden')) {
+                if (currentStage === 6) {
+                    endGame();
+                } else {
+                    startCountdown();
+                }
+            }
+        }
+
+        function startCountdown() {
+            stageCompleteMessage.textContent = `${playerName}, כל הכבוד!! עברת לשלב הבא!`;
+            stageCompleteScreen.style.display = 'flex';
+            countdownDisplay.style.display = 'flex';
+            let count = 3;
+            countdownDisplay.textContent = count;
+
+            const countdownInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    countdownDisplay.textContent = count;
+                } else {
+                    clearInterval(countdownInterval);
+                    stageCompleteScreen.style.display = 'none';
+                    startStage();
+                }
+            }, 1000);
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                timer++;
+                timerDisplay.textContent = `זמן: ${timer} שניות`;
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            stageCompleteScreen.style.display = 'flex';
+            stageCompleteMessage.innerHTML = `
+                <h2>כל הכבוד ${playerName}!</h2>
+                <p>סיימת את המשחק עם ${score} נקודות</p>
+                <img src="victory.png" id="victory" alt="ניצחון">
+                <button id="new-game-button" class="button" onclick="resetGame()">משחק חדש</button>
+            `;
+            countdownDisplay.style.display = 'none';
+        }
+
+        function resetGame() {
+            playerName = '';
+            currentStage = 0;
+            score = 0;
+            timer = 0;
+            clearInterval(timerInterval);
+            
+            stageCompleteScreen.style.display = 'none';
+            stageCompleteScreen.innerHTML = `
+                <h2 id="stage-complete-message"></h2>
+                <div id="countdown"></div>
+            `;
+            gameScreen.style.display = 'none';
+            startScreen.style.display = 'flex';
+            nameInput.value = '';
+            
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+    </script>
+</body>
+</html>

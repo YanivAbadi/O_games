@@ -1,0 +1,126 @@
+/* Global styles */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f0f0f0;
+  direction: rtl;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  color: #333;
+}
+
+#game-container {
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  text-align: center;
+  max-width: 600px;
+  width: 90%;
+}
+
+/* Start screen styles */
+#start-screen h1 {
+  color: #2c3e50;
+  margin-bottom: 30px;
+}
+
+#start-screen button {
+  background-color: #3498db;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 10px 20px;
+  transition: background-color 0.3s ease;
+}
+
+#start-screen button:hover {
+  background-color: #2980b9;
+}
+
+/* Game screen styles */
+#game-screen {
+  display: none;
+}
+
+#timer, #score {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+#instruction {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+#circles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.circle {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.circle:hover {
+  transform: scale(1.1);
+}
+
+/* Stage complete styles */
+#stage-complete {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#stage-complete-message {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+#countdown {
+  font-size: 24px;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  #game-container {
+    padding: 10px;
+  }
+
+  #start-screen h1 {
+    font-size: 24px;
+  }
+
+  #instruction {
+    font-size: 20px;
+  }
+
+  .circle {
+    width: 40px;
+    height: 40px;
+  }
+}
